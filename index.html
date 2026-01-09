@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mino Artists' Oil Colours Kusakabe</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* 圖片網格設定 */
+            --total-cols: 6;  /* 寬度有 6 行 */
+            --total-rows: 12; /* 高度有 12 列 */
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            padding: 20px;
+        }
+
+        /* 修改這一段 */
+        .chart-container {
+            display: grid;
+            /* 關鍵修改：指定每行 6 個，讓它由左至右自動排列 */
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 15px;
+            padding-bottom: 20px;
+        }
+
+        .color-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            overflow: hidden;
+            width: 220px; /* 固定卡片寬度 */
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .color-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* 修改這一段 class */
+        /* 這一區塊保持原本的「容錯放大」設定 */
+        .swatch-rect {
+            width: 100%;
+            height: 100px;
+            background-image: url('./color-chart-12x6.jpg'); /* 你的圖片 */
+            background-repeat: no-repeat;
+            /* === 關鍵修改：放大背景圖 ===
+            
+            原本邏輯：
+            寬度 6 行 = 600%
+            高度 12 列 = 1200%
+            
+            容錯邏輯 (放大 1.5 倍)：
+            我們讓圖片變得更大，這樣每個格子顯示的內容就更聚焦在中心。
+            寬度：600% * 1.5 = 900%
+            高度：1200% * 1.5 = 1800%
+            */
+            background-size: 700% 1400%;
+            
+            /* 這行不用動，JS 會去控制它的位置。
+            但因為圖片放大了，原本的 JS 座標會自動變成「對齊中心」。
+            */
+            
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-box {
+            padding: 10px;
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
+
+        .paint-number {
+            font-weight: 700;
+            color: #333;
+            font-size: 1rem;
+            margin-right: 5px;
+        }
+
+        .paint-name-en {
+            font-weight: 600;
+            color: #222;
+            display: block;
+        }
+
+        .paint-name-jp {
+            font-size: 0.75rem;
+            color: #666;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .badge-spec {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background-color: #f1f3f5;
+            color: #495057;
+            border-radius: 4px;
+        }
+        
+        .badge-class {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+
+        .stars {
+            color: #fcc419;
+            letter-spacing: -2px;
+        }
+        /* RWD 優化：手機版改為 2 欄或 3 欄，避免太擠 */
+@media (max-width: 768px) {
+    .chart-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <h1 class="mb-5 text-center fw-light">
+        Kusakabe
+        <br>
+        <small class="fw-normal text-dark">Mino Artists' Oil Colours</small>
+    </h1>
+    
+    <div class="chart-container" id="colorGrid">
+        </div>
+</div>
+
+<script>
+    // ... paintData 資料保持不變 ...
+    const paintData = [
+        { code: "01", en: "Cobalt Violet Deep", jp: "コバルトバイオレットディープ", pig: "PV14", cls: "G", tr: "Opaque", star: "★★★★★" },
+        { code: "02", en: "Rose Cobalt Violet", jp: "ローズコバルトバイオレット", pig: "PV14", cls: "G", tr: "Semi-Transparent", star: "★★★☆☆" },
+        { code: "03", en: "Mineral Violet", jp: "ミネラルバイオレット", pig: "PV16", cls: "D", tr: "Opaque", star: "★★★★★" },
+        { code: "04", en: "Mars Violet", jp: "マルスバイオレット", pig: "PR101", cls: "B", tr: "Opaque", star: "★★★★★" },
+        { code: "05", en: "Dioxazine Violet", jp: "ジオキサジンバイオレット", pig: "PV23", cls: "B", tr: "Transparent", star: "★★★★★" },
+        { code: "06", en: "Quinacridone Violet", jp: "キナクリドンバイオレット", pig: "PV19", cls: "B", tr: "Transparent", star: "★★★★★" },
+        { code: "07", en: "Mauve", jp: "モーブ", pig: "PV37+PB29+PR122", cls: "B", tr: "Transparent", star: "★★★★☆" },
+        { code: "08", en: "Lapis Lazuli (Genuine)", jp: "ラピスラズリ（ジェニュイン）（天然）", pig: "NA", cls: "H", tr: "Opaque", star: "★★★★★" },
+        { code: "09", en: "Ultramarine", jp: "ウルトラマリン", pig: "PB29", cls: "B", tr: "Transparent", star: "★★★★★" },
+        { code: "10", en: "Cobalt Blue", jp: "コバルトブルー", pig: "PB28", cls: "F", tr: "Opaque", star: "★★★★★" },
+        { code: "11", en: "Cobalt Light Blue", jp: "コバルトライトブルー", pig: "PB28", cls: "F", tr: "Opaque", star: "★★★★★" },
+        { code: "12", en: "Cerulean Blue", jp: "セルリアンブルー", pig: "PB35", cls: "F", tr: "Opaque", star: "★★★★★" },
+        { code: "13", en: "Prussian Blue", jp: "プルシャンブルー", pig: "PB27", cls: "A", tr: "Semi-Transparent", star: "★★★★★" },
+        { code: "14", en: "Phthalo Blue", jp: "フタロブルー", pig: "PB15:3", cls: "A", tr: "Transparent", star: "★★★★★" },
+        { code: "15", en: "Phthalo Turquoise", jp: "フタロターコイズ", pig: "PG7+PB15:3", cls: "A", tr: "Transparent", star: "★★★★★" },
+        { code: "16", en: "Royal Blue", jp: "ロイヤルブルー", pig: "PW6+PB29+PB15:3", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "17", en: "Malachite (Genuine)", jp: "マラカイト（ジェニュイン）（天然）", pig: "MALACHITE", cls: "H", tr: "Opaque", star: "★★★★★" },
+        { code: "18", en: "Viridian", jp: "ビリジャン", pig: "PG18", cls: "E", tr: "Transparent", star: "★★★★★" },
+        { code: "19", en: "Oxide Of Chromium", jp: "オキサイドグリーン", pig: "PG17", cls: "B", tr: "Opaque", star: "★★★★★" },
+        { code: "20", en: "Cadmium Green Light", jp: "カドミウムグリーンライト", pig: "PG18+PY35", cls: "E", tr: "Opaque", star: "★★★★★" },
+        { code: "21", en: "Cobalt Green Deep", jp: "コバルトグリーンディープ", pig: "PG26", cls: "E", tr: "Opaque", star: "★★★★★" },
+        { code: "22", en: "Titanium Cobalt Green", jp: "チタニウムコバルトグリーン", pig: "PG50", cls: "E", tr: "Opaque", star: "★★★★★" },
+        { code: "23", en: "Terre Verte (Genuine)", jp: "テールベルト（ジェニュイン）（天然）", pig: "PG23", cls: "G", tr: "Semi-Transparent", star: "★★★★★" },
+        { code: "24", en: "Phthalo Green", jp: "フタログリーン", pig: "PG7", cls: "A", tr: "Transparent", star: "★★★★★" },
+        { code: "25", en: "Sap Green", jp: "サップグリーン", pig: "PY100+PR101+PB15:3", cls: "B", tr: "Transparent", star: "★★★☆☆" },
+        { code: "26", en: "Olive Green", jp: "オリーブグリーン", pig: "PY100+PB29", cls: "B", tr: "Transparent", star: "★★★☆☆" },
+        { code: "27", en: "Cadmium Yellow Deep", jp: "カドミウムイエローディープ", pig: "PY35", cls: "E", tr: "Opaque", star: "★★★★★" },
+        { code: "28", en: "Cadmium Yellow Lemon", jp: "カドミウムイエローレモン", pig: "PY35", cls: "E", tr: "Opaque", star: "★★★★★" },
+        { code: "29", en: "Aureolin", jp: "オーレオリン", pig: "PY40", cls: "F", tr: "Semi-Transparent", star: "★★★★☆" },
+        { code: "30", en: "Quinophthalone Yellow", jp: "キノフタロンイエロー", pig: "PY138", cls: "C", tr: "Semi-Transparent", star: "★★★★☆" },
+        { code: "31", en: "Yellow Ochre", jp: "イエローオーカー", pig: "PY42+PBr11", cls: "B", tr: "Opaque", star: "★★★★★" },
+        { code: "32", en: "Yellow Ochre Light", jp: "イエローオーカーライト", pig: "PY42", cls: "B", tr: "Opaque", star: "★★★★★" },
+        { code: "33", en: "Titanium Yellow", jp: "チタニウムイエロー", pig: "PY53", cls: "C", tr: "Opaque", star: "★★★★★" },
+        { code: "34", en: "Jaune Brillant No.1", jp: "ジョンブリアン No.1", pig: "PW6+PO20+PY35+PR108", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "35", en: "Jaune Brillant No.2", jp: "ジョンブリアン No.2", pig: "PW6+PY35+PR108", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "36", en: "Naples Yellow", jp: "ネープルスイエロー", pig: "PW1+PY184+PY42", cls: "C", tr: "Opaque", star: "★★★☆☆" },
+        { code: "37", en: "Naples Yellow Ivory", jp: "ネープルスイエローアイボリー", pig: "PW1+PY35", cls: "C", tr: "Opaque", star: "★★★☆☆" },
+        { code: "38", en: "Unbleached Titanium", jp: "アンブリーチドチタニウム", pig: "PW6+PY42+PR101+PBk11", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "39", en: "Cinnabar (Vermilion/Genuine)", jp: "バーミリオン（ジェニュイン）（天然）", pig: "CINNABAR", cls: "H", tr: "Opaque", star: "★★★☆☆" },
+        { code: "40", en: "Cadmium Red Deep", jp: "カドミウムレッドディープ", pig: "PR108", cls: "F", tr: "Opaque", star: "★★★★★" },
+        { code: "41", en: "Cadmium Red", jp: "カドミウムレッド", pig: "PR108", cls: "F", tr: "Opaque", star: "★★★★★" },
+        { code: "42", en: "Vermilion", jp: "バーミリオン", pig: "PR106", cls: "H", tr: "Opaque", star: "★★★☆☆" },
+        { code: "43", en: "Pyrrole Red", jp: "ピロールレッド", pig: "PR254", cls: "C", tr: "Opaque", star: "★★★★★" },
+        { code: "44", en: "Anthraquinone Red", jp: "アンスラキノンレッド", pig: "PR177", cls: "C", tr: "Transparent", star: "★★★★★" },
+        { code: "45", en: "Quinacridone Magenta", jp: "キナクリドンマゼンタ", pig: "PR122", cls: "B", tr: "Transparent", star: "★★★★★" },
+        { code: "46", en: "Quinacridone Red", jp: "キナクリドンレッド", pig: "PV19", cls: "C", tr: "Transparent", star: "★★★★★" },
+        { code: "47", en: "Noble Pink", jp: "ノーブルピンク", pig: "PW6+PV19", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "48", en: "Venetian Red", jp: "ベネチアンレッド", pig: "PR101", cls: "B", tr: "Opaque", star: "★★★★★" },
+        { code: "49", en: "Burnt Sienna", jp: "バーントシェンナ", pig: "PR101", cls: "B", tr: "Opaque", star: "★★★★★" },
+        { code: "50", en: "Raw Sienna", jp: "ローシェンナ", pig: "PBr7", cls: "B", tr: "Semi-Transparent", star: "★★★★★" },
+        { code: "51", en: "Burnt Umber", jp: "バーントアンバー", pig: "PBr7", cls: "A", tr: "Opaque", star: "★★★★★" },
+        { code: "52", en: "Raw Umber", jp: "ローアンバー", pig: "PBr7", cls: "A", tr: "Opaque", star: "★★★★★" },
+        { code: "53", en: "Transparent Red Oxide", jp: "トランスレッドオキサイド", pig: "PR101", cls: "B", tr: "Transparent", star: "★★★★★" },
+        { code: "54", en: "Transparent Yellow Oxide", jp: "トランスイエローオキサイド", pig: "PY42", cls: "B", tr: "Transparent", star: "★★★★★" },
+        { code: "55", en: "Vandyke Brown", jp: "バンダイクブラウン", pig: "PR101+PBk7", cls: "A", tr: "Transparent", star: "★★★★★" },
+        { code: "56", en: "Imidazolone Gold", jp: "イミダゾロンゴールド", pig: "PY83+PBr25", cls: "B", tr: "Transparent", star: "★★★★☆" },
+        { code: "57", en: "Italian Pink", jp: "イタリアンピンク", pig: "PY100+PBr7+PR101", cls: "B", tr: "Transparent", star: "★★★☆☆" },
+        { code: "58", en: "Monochrome Cool", jp: "モノクロームクール", pig: "PW1+PBk28+PY42", cls: "C", tr: "Opaque", star: "★★★★☆" },
+        { code: "59", en: "Monochrome Warm", jp: "モノクロームウォーム", pig: "PW1+PY42+PBk28", cls: "C", tr: "Opaque", star: "★★★★☆" },
+        { code: "60", en: "Violet Grey", jp: "バイオレットグレー", pig: "PW6+PV23+PB29", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "61", en: "Blue Grey", jp: "ブルーグレー", pig: "PW6+PB29", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "62", en: "Green Grey", jp: "グリーングレー", pig: "PW6+PG18", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "63", en: "Rose Grey", jp: "ローズグレー", pig: "PW6+PR101", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "64", en: "Grey Of Grey", jp: "グレーオブグレー", pig: "PW6+PBk11", cls: "B", tr: "Opaque", star: "★★★☆☆" },
+        { code: "65", en: "Payne's Grey", jp: "ペインズグレー", pig: "PB29+PBk28", cls: "B", tr: "Opaque", star: "★★★★☆" },
+        { code: "66", en: "Ivory Black", jp: "アイボリーブラック", pig: "PBk9+PBk7", cls: "A", tr: "Opaque", star: "★★★★★" },
+        { code: "67", en: "Peach Black", jp: "ピーチブラック", pig: "PBk7+PB27", cls: "A", tr: "Opaque", star: "★★★★★" },
+        { code: "68", en: "Lamp Black", jp: "ランプブラック", pig: "PBk7", cls: "A", tr: "Opaque", star: "★★★★★" },
+        { code: "69", en: "Mars Black", jp: "マルスブラック", pig: "PBk11", cls: "A", tr: "Opaque", star: "★★★★★" },
+        { code: "70", en: "Titanium White", jp: "チタニウムホワイト", pig: "PW6+PW4", cls: "-", tr: "Opaque", star: "★★★★★" },
+        { code: "71", en: "Silver White", jp: "シルバーホワイト", pig: "PW1", cls: "-", tr: "Semi-Opaque", star: "★★★★★" },
+        { code: "72", en: "Zinc White", jp: "ジンクホワイト", pig: "PW4", cls: "-", tr: "Semi-Opaque", star: "★★★★★" }
+    ];
+
+    const container = document.getElementById('colorGrid');
+    
+    // 定義圖片的物理結構 (這是固定的，不能改)
+    // 圖片本身是：直向有 12 格，橫向有 6 格
+    const IMG_ROWS = 12; 
+    const IMG_COLS = 6; 
+
+    paintData.forEach((item, index) => {
+        // === 核心修改：座標計算邏輯 ===
+        
+        // 雖然我們現在是橫向印出卡片，
+        // 但圖片裡的順序還是「直向優先」。
+        // 所以我們要算：第 index 個顏色，在圖片的第幾行(col)、第幾列(row)？
+        
+        // 圖片邏輯：先填滿第 1 欄的 12 格，再換第 2 欄...
+        const imgColIndex = Math.floor(index / IMG_ROWS); // 第幾欄 (0-5)
+        const imgRowIndex = index % IMG_ROWS;             // 第幾列 (0-11)
+
+        // 計算 background-position 百分比
+        // 公式：(座標 / (總數 - 1)) * 100
+        const xPos = (imgColIndex / (IMG_COLS - 1)) * 100;
+        const yPos = (imgRowIndex / (IMG_ROWS - 1)) * 100;
+
+        const html = `
+            <div class="color-card">
+                <div class="swatch-rect" style="background-position: ${xPos}% ${yPos}%;"></div>
+                <div class="info-box">
+                    <div class="d-flex align-items-baseline mb-1">
+                        <span class="paint-number">${item.code}</span>
+                        <span class="paint-name-en">${item.en}</span>
+                    </div>
+                    <span class="paint-name-jp">${item.jp}</span>
+                    <div class="badges">
+                        <span class="badge-spec badge-class">Class ${item.cls}</span>
+                        <span class="badge-spec">${item.pig}</span>
+                        <span class="badge-spec">${item.tr}</span>
+                        <span class="stars ms-auto">${item.star}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', html);
+    });
+</script>
+
+</body>
+</html>
