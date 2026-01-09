@@ -23,8 +23,12 @@
             display: grid;
             /* 關鍵修改：指定每行 6 個，讓它由左至右自動排列 */
             grid-template-columns: repeat(6, 1fr); 
-            gap: 15px;
+            gap: 45px;
             padding-bottom: 20px;
+            /* 新增：設定最大寬度並置中 */
+            max-width: 1545px; /* (220px * 6) + (15px * 5) */
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .color-card {
@@ -121,13 +125,13 @@
             color: #fcc419;
             letter-spacing: -2px;
         }
-        /* RWD 優化：手機版改為 3 欄，並讓卡片寬度自適應 */
+        /* RWD 優化：手機版改為 2 欄，並讓卡片寬度自適應 */
         @media (max-width: 768px) {
             body {
                 padding: 10px; /* 減少邊距 */
             }
             .chart-container {
-                grid-template-columns: repeat(3, 1fr); /* 3 欄 */
+                grid-template-columns: repeat(2, 1fr); /* 2 欄 */
                 gap: 10px; /* 縮小間距 */
             }
             .color-card {
