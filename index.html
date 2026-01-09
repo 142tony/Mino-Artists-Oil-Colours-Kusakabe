@@ -121,12 +121,19 @@
             color: #fcc419;
             letter-spacing: -2px;
         }
-        /* RWD 優化：手機版改為 2 欄或 3 欄，避免太擠 */
-@media (max-width: 768px) {
-    .chart-container {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
+        /* RWD 優化：手機版改為 3 欄，並讓卡片寬度自適應 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px; /* 減少邊距 */
+            }
+            .chart-container {
+                grid-template-columns: repeat(3, 1fr); /* 3 欄 */
+                gap: 10px; /* 縮小間距 */
+            }
+            .color-card {
+                width: auto; /* 關鍵：讓卡片寬度自適應 */
+            }
+        }
     </style>
 </head>
 <body>
