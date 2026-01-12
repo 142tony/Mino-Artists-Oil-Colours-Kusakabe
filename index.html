@@ -19,14 +19,20 @@
         }
 
         /* 修改這一段 */
-        .chart-container {
+      .chart-container {
             display: grid;
-            /* 關鍵修改：指定每行 6 個，讓它由左至右自動排列 */
-            grid-template-columns: repeat(6, 1fr); 
+            /* OLD: 強制 6 欄，寬度不夠時會爆版 */
+            /* grid-template-columns: repeat(6, 1fr); */
+        
+            /* NEW: 自動填充，每個欄位最小 210px，剩餘空間自動平分 */
+            /* 這能讓它在 Cyberbiz 的任何寬度下都完美呈現 */
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); 
+            
             gap: 15px;
             padding-bottom: 20px;
-            /* 新增：設定最大寬度並置中 */
-            max-width: 1395px; /* (220px * 6) + (15px * 5) */
+            
+            /* NEW: 移除 max-width 固定限制，改為 100% 以適應父容器 */
+            width: 100%;
             margin-left: auto;
             margin-right: auto;
         }
@@ -36,7 +42,13 @@
             border: 1px solid #dee2e6;
             border-radius: 6px;
             overflow: hidden;
-            width: 220px; /* 固定卡片寬度 */
+            
+            /* OLD: 固定寬度會導致 RWD 困難 */
+            /* width: 220px; */
+            
+            /* NEW: 跟隨 grid 格子寬度 */
+            width: 100%; 
+            
             transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             flex-direction: column;
@@ -130,19 +142,6 @@
             right: 10px;        /* 離右側 10px */
             color: #fcc419;
             letter-spacing: -2px;
-        }
-        /* RWD 優化：手機版改為 2 欄，並讓卡片寬度自適應 */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px; /* 減少邊距 */
-            }
-            .chart-container {
-                grid-template-columns: repeat(2, 1fr); /* 2 欄 */
-                gap: 10px; /* 縮小間距 */
-            }
-            .color-card {
-                width: auto; /* 關鍵：讓卡片寬度自適應 */
-            }
         }
     </style>
 </head>
@@ -284,3 +283,4 @@
 
 </body>
 </html>
+
